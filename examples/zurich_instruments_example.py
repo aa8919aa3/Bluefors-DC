@@ -13,11 +13,12 @@ def main():
     print("=== Bluefors DC - Zurich Instruments MFLI Example ===\n")
     
     # Check what Zurich drivers are available
-    try:
-        from bluefors_dc.instruments import ZhinstrumentsMFLI
+    from bluefors_dc import instruments
+    
+    if instruments._ZHINST_QCODES_AVAILABLE:
         print("✓ Official Zurich Instruments driver (zhinst-qcodes) is available")
         official_available = True
-    except ImportError:
+    else:
         print("✗ Official Zurich Instruments driver (zhinst-qcodes) is not available")
         print("  Install with: pip install zhinst-qcodes")
         official_available = False
