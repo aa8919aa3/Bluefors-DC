@@ -21,6 +21,7 @@ classifiers = [
 ]
 dependencies = [
     "qcodes>=0.41.0",
+    "qcodes-contrib-drivers>=0.20.0",
     "numpy>=1.21.0",
     "matplotlib>=3.5.0",
     "pyqtgraph>=0.12.0",
