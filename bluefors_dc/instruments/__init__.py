@@ -6,7 +6,7 @@ This module provides instrument drivers for:
 - Keithley 6221: Current source (custom)
 - Keithley 2182A: Nanovoltmeter (custom)
 - Keithley 2636B: Dual voltage source (custom)
-- Zurich MFLI: Lock-in amplifier (custom)
+- Zurich MFLI: Lock-in amplifier (zhinst-qcodes + custom fallback)
 - Lakeshore 372: Temperature controller (custom)
 - BlueFors: Fridge monitoring (contrib)
 - Lakeshore 331: Temperature controller (contrib)
@@ -17,6 +17,14 @@ from .ami430 import AMI430MagnetController
 from .keithley import Keithley6221, Keithley2182A, Keithley2636B
 from .zurich import ZurichMFLI
 from .lakeshore import Lakeshore372
+
+# Zurich Instruments official drivers
+try:
+    from zhinst.qcodes import MFLI as ZhinstrumentsMFLI
+    _ZHINST_QCODES_AVAILABLE = True
+except ImportError:
+    _ZHINST_QCODES_AVAILABLE = False
+    ZhinstrumentsMFLI = None
 
 # QCoDeS contrib drivers
 try:
@@ -42,6 +50,10 @@ __all__ = [
     'ZurichMFLI',
     'Lakeshore372',
 ]
+
+# Add official Zurich Instruments drivers to exports if available
+if _ZHINST_QCODES_AVAILABLE:
+    __all__.append('ZhinstrumentsMFLI')
 
 # Add contrib drivers to exports if available
 if _BLUEFORS_AVAILABLE:

@@ -40,6 +40,9 @@ dev = [
     "flake8>=4.0.0",
     "mypy>=0.991",
 ]
+zhinst = [
+    "zhinst-qcodes>=0.3.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
