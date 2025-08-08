@@ -4,7 +4,7 @@ Basic tests for Bluefors DC measurement system.
 
 import pytest
 import numpy as np
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch
 
 from bluefors_dc.instruments import AMI430MagnetController, Keithley6221, Keithley2182A
 from bluefors_dc.measurements import BlueforsStation
@@ -74,7 +74,7 @@ class TestInstrumentDrivers:
     def test_magnet_controller_field_calculation(self):
         """Test magnetic field calculations."""
         # Mock the VISA instrument
-        with pytest.mock.patch('bluefors_dc.instruments.ami430.VisaInstrument'):
+        with patch('bluefors_dc.instruments.ami430.VisaInstrument'):
             magnet = AMI430MagnetController('test_magnet', 'MOCK::ADDRESS')
             
             # Mock field readings
@@ -93,7 +93,7 @@ class TestInstrumentDrivers:
             
     def test_field_vector_validation(self):
         """Test field vector safety validation."""
-        with pytest.mock.patch('bluefors_dc.instruments.ami430.VisaInstrument'):
+        with patch('bluefors_dc.instruments.ami430.VisaInstrument'):
             magnet = AMI430MagnetController('test_magnet', 'MOCK::ADDRESS')
             
             # Test safe field setting
@@ -126,8 +126,8 @@ class TestMeasurementProtocols:
         station = BlueforsStation()
         
         # Mock instrument addition (would fail without actual hardware)
-        with pytest.mock.patch('bluefors_dc.instruments.keithley.Keithley6221'):
-            with pytest.mock.patch.object(station, 'add_component'):
+        with patch('bluefors_dc.instruments.keithley.Keithley6221'):
+            with patch.object(station, 'add_component'):
                 current_source = station.add_current_source('MOCK::ADDRESS')
                 assert station.current_source is not None
                 
