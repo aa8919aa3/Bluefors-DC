@@ -2,24 +2,51 @@
 """
 Example demonstrating the use of QCoDeS contrib drivers in Bluefors DC measurements.
 
-This example shows how to use contrib drivers alongside the custom drivers 
+This example shows how to use contrib drivers alongside the official/custom drivers 
 for enhanced functionality and broader instrument support.
+
+MIGRATION NOTE: This example now uses official QCoDeS drivers where available,
+with contrib and custom drivers for additional functionality.
 """
 
 import time
 from bluefors_dc.instruments import (
-    # Custom drivers
-    AMI430MagnetController, 
-    Keithley6221, 
-    Lakeshore372,
+    # Official QCoDeS drivers (preferred)
+    AMI430MagnetController,  # Now uses qcodes.instrument_drivers.american_magnetics.AMI430
+    Keithley2636B,           # Now uses qcodes.instrument_drivers.Keithley.Keithley_2636B
+    Lakeshore372,            # Now uses qcodes.instrument_drivers.Lakeshore.Model_372
+    
+    # Custom drivers (no official equivalent)
+    Keithley6221,            # Custom - no official QCoDeS equivalent
+    Keithley2182A,           # Custom - no official QCoDeS equivalent
+    ZurichMFLI,              # Custom fallback - use zhinst-qcodes for official
+    
     # Contrib drivers
-    BlueFors,
-    Lakeshore331
+    BlueFors,                # From qcodes_contrib_drivers
+    Lakeshore331,            # From qcodes_contrib_drivers
+    
+    # Status function
+    get_driver_status
 )
 
 def main():
-    print("QCoDeS Contrib Drivers Integration Example")
-    print("=" * 50)
+    print("QCoDeS Official + Contrib Drivers Integration Example")
+    print("=" * 60)
+    
+    # Show driver status
+    print("\n0. Driver Migration Status")
+    status = get_driver_status()
+    print("\nOfficial QCoDeS drivers (preferred):")
+    for driver, available in status['official_drivers_available'].items():
+        symbol = "✓" if available else "✗"
+        source = "official QCoDeS" if available else "custom fallback"
+        print(f"  {symbol} {driver}: {source}")
+    
+    print("\nContrib drivers:")
+    for driver, available in status['contrib_drivers_available'].items():
+        symbol = "✓" if available else "✗"
+        source = "qcodes_contrib_drivers" if available else "not available"
+        print(f"  {symbol} {driver}: {source}")
     
     # Example 1: Using BlueFors contrib driver for fridge monitoring
     print("\n1. BlueFors Fridge Monitoring (contrib driver)")
@@ -42,7 +69,7 @@ def main():
             channel_magnet=5
         )
         print(f"BlueFors fridge driver initialized: {fridge.name}")
-        print("Available parameters:", list(fridge.parameters.keys()))
+        print("Available parameters:", list(fridge.parameters.keys())[:5], "...")
         
         # Example of how you would read temperatures (requires actual hardware)
         # temp_mc = fridge.temperature_mixing_chamber()
@@ -51,59 +78,70 @@ def main():
     except Exception as e:
         print(f"BlueFors setup failed (expected without hardware): {e}")
     
-    # Example 2: Using Lakeshore 331 contrib driver alongside Lakeshore 372 custom driver
-    print("\n2. Lakeshore Temperature Controllers")
-    print("   - Custom Lakeshore 372 driver for AC resistance bridge")  
-    print("   - Contrib Lakeshore 331 driver for basic temperature control")
+    # Example 2: Using official QCoDeS drivers (now preferred)
+    print("\n2. Official QCoDeS Drivers (Preferred)")
+    print("   - AMI430: Official american_magnetics.AMI430")  
+    print("   - Keithley2636B: Official Keithley.Keithley_2636B")
+    print("   - Lakeshore372: Official Lakeshore.Model_372")
     
     try:
-        # Custom driver for Lakeshore 372 (16-channel AC resistance bridge)
-        lakeshore_372 = Lakeshore372(
-            name="lakeshore_372",
-            address="TCPIP::192.168.1.110::INSTR"  # Example address
+        # Official AMI430 driver
+        magnet = AMI430MagnetController(
+            name="ami430_magnet",
+            address="TCPIP::192.168.1.100::7180::SOCKET",  # Example address
+            has_current_rating=True  # Official driver parameter
         )
-        print(f"Lakeshore 372 (custom): {lakeshore_372.name}")
+        print(f"AMI430 (official): {magnet.name}")
+        print(f"  Module source: {magnet.__class__.__module__}")
         
     except Exception as e:
-        print(f"Lakeshore 372 setup failed (expected without hardware): {e}")
+        print(f"AMI430 setup failed (expected without hardware): {e}")
     
     try:
-        # Contrib driver for Lakeshore 331 (basic temperature controller)
-        lakeshore_331 = Lakeshore331(
-            name="lakeshore_331", 
-            address="GPIB0::12::INSTR"  # Example address
+        # Official Keithley2636B driver  
+        smu = Keithley2636B(
+            name="keithley_2636b",
+            address="TCPIP::192.168.1.105::INSTR"  # Example address
         )
-        print(f"Lakeshore 331 (contrib): {lakeshore_331.name}")
-        print("Available channels:", [ch.name for ch in lakeshore_331.channels])
+        print(f"Keithley2636B (official): {smu.name}")
+        print(f"  Module source: {smu.__class__.__module__}")
         
     except Exception as e:
-        print(f"Lakeshore 331 setup failed (expected without hardware): {e}")
+        print(f"Keithley2636B setup failed (expected without hardware): {e}")
     
-    # Example 3: Station setup combining custom and contrib drivers  
-    print("\n3. Combined Station Setup")
+    # Example 3: Custom drivers still used where no official equivalent exists
+    print("\n3. Custom Drivers (Where No Official Equivalent)")
+    print("   - Keithley6221: Custom current source driver")
+    print("   - Keithley2182A: Custom nanovoltmeter driver")
+    
+    try:
+        current_source = Keithley6221(
+            name="keithley_6221",
+            address="TCPIP::192.168.1.103::INSTR"
+        )
+        print(f"Keithley6221 (custom): {current_source.name}")
+        
+    except Exception as e:
+        print(f"Keithley6221 setup failed (expected without hardware): {e}")
+    
+    # Example 4: Station setup combining official, contrib, and custom drivers  
+    print("\n4. Combined Station Setup")
     from bluefors_dc.measurements import BlueforsStation
     
     station = BlueforsStation()
     
-    print("Station can combine:")
-    print("  - Custom measurement drivers (Keithley 6221/2182A, AMI430, Zurich MFLI)")  
-    print("  - Contrib monitoring drivers (BlueFors fridge, Lakeshore 331)")
-    print("  - Both provide complementary functionality for complete system control")
+    print("Station can now combine:")
+    print("  - Official QCoDeS drivers (AMI430, Keithley2636B, Lakeshore372)")  
+    print("  - Contrib monitoring drivers (BlueFors fridge, Lakeshore331)")
+    print("  - Custom drivers only where no official equivalent exists")
+    print("  - All provide complementary functionality for complete system control")
     
-    # Show available driver classes
-    print("\n4. Available Driver Classes:")
-    print("Custom drivers:")
-    custom_drivers = [
-        'AMI430MagnetController', 'Keithley6221', 'Keithley2182A', 
-        'Keithley2636B', 'ZurichMFLI', 'Lakeshore372'
-    ]
-    for driver in custom_drivers:
-        print(f"  - {driver}")
-    
-    print("\nContrib drivers:")
-    contrib_drivers = ['BlueFors', 'Lakeshore331']
-    for driver in contrib_drivers:
-        print(f"  - {driver}")
+    print("\n5. Migration Benefits")
+    print("✓ Official maintenance and support")
+    print("✓ Latest device features and bug fixes")  
+    print("✓ Better integration with QCoDeS ecosystem")
+    print("✓ Consistent parameter naming and validation")
+    print("✓ Professional documentation and examples")
 
 if __name__ == "__main__":
     main()

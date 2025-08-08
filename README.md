@@ -16,18 +16,20 @@ This package provides Python/QCoDeS equivalents for all LabVIEW VIs, implementin
 ## Supported Instruments
 
 ### Control Electronics
-- **AMI 430**: 2-axis vector magnet controller (up to 9T) - *custom driver*
-- **Lakeshore 372**: AC resistance bridge temperature controller (16 channels) - *custom driver*
+- **AMI 430**: 2-axis vector magnet controller (up to 9T) - *✅ official QCoDeS driver*
+- **Lakeshore 372**: AC resistance bridge temperature controller (16 channels) - *✅ official QCoDeS driver*
 - **Lakeshore 331**: Basic temperature controller (2 channels) - *contrib driver*
 
 ### Measurement Electronics  
-- **Keithley 6221**: Current source with delta mode capability - *custom driver*
-- **Keithley 2182A**: Nanovoltmeter for high-precision voltage measurement - *custom driver*
-- **Keithley 2636B**: Dual channel source-measure unit - *custom driver*
-- **Zurich Instruments MFLI**: Lock-in amplifier with harmonic analysis - *official zhinst-qcodes driver + custom fallback*
+- **Keithley 6221**: Current source with delta mode capability - *custom driver (no official equivalent)*
+- **Keithley 2182A**: Nanovoltmeter for high-precision voltage measurement - *custom driver (no official equivalent)*
+- **Keithley 2636B**: Dual channel source-measure unit - *✅ official QCoDeS driver*
+- **Zurich Instruments MFLI**: Lock-in amplifier with harmonic analysis - *✅ preferred: zhinst-qcodes, fallback: custom*
 
 ### Monitoring and Control
 - **BlueFors**: Fridge monitoring via log files - *contrib driver*
+
+**📢 MIGRATION UPDATE**: This package now uses official QCoDeS drivers where available, with custom drivers only for instruments without official support. See [DRIVER_MIGRATION.md](DRIVER_MIGRATION.md) for details.
 
 ## Installation
 
@@ -48,6 +50,20 @@ pip install -e .[zhinst]
 # Or install with both dev and Zurich Instruments drivers
 pip install -e .[dev,zhinst]
 ```
+
+### Driver Selection
+The package automatically selects the best available driver:
+- **Official QCoDeS drivers** (preferred when available)
+- **Contrib drivers** for community-supported instruments
+- **Custom drivers** only when no official equivalent exists
+
+To check which drivers are being used:
+```python
+from bluefors_dc.instruments import get_driver_status
+print(get_driver_status())
+```
+
+See [DRIVER_MIGRATION.md](DRIVER_MIGRATION.md) for complete migration details.
 
 ## Quick Start
 

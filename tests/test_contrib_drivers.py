@@ -24,7 +24,7 @@ def test_contrib_drivers_import():
         pytest.skip("qcodes-contrib-drivers not available")
 
 def test_custom_drivers_always_available():
-    """Test that custom drivers are always available.""" 
+    """Test that custom drivers are always available as fallback.""" 
     from bluefors_dc.instruments import (
         AMI430MagnetController,
         Keithley6221,
@@ -34,7 +34,7 @@ def test_custom_drivers_always_available():
         Lakeshore372
     )
     
-    # All custom drivers should be available
+    # All drivers should be available (either official or custom fallback)
     assert AMI430MagnetController is not None
     assert Keithley6221 is not None
     assert Keithley2182A is not None
@@ -42,12 +42,49 @@ def test_custom_drivers_always_available():
     assert ZurichMFLI is not None
     assert Lakeshore372 is not None
 
+def test_official_drivers_preferred():
+    """Test that official drivers are used when available."""
+    from bluefors_dc.instruments import (
+        AMI430MagnetController,
+        Keithley2636B,
+        Lakeshore372,
+        get_driver_status
+    )
+    
+    # Check driver status
+    status = get_driver_status()
+    official_available = status['official_drivers_available']
+    
+    # Verify official drivers are being used when available
+    if official_available['AMI430']:
+        assert 'qcodes.instrument_drivers.american_magnetics.AMI430' in AMI430MagnetController.__module__
+    else:
+        assert 'bluefors_dc.instruments.ami430' in AMI430MagnetController.__module__
+        
+    if official_available['Keithley2636B']:
+        assert 'qcodes.instrument_drivers.Keithley.Keithley_2636B' in Keithley2636B.__module__
+    else:
+        assert 'bluefors_dc.instruments.keithley' in Keithley2636B.__module__
+        
+    if official_available['Lakeshore372']:
+        assert 'qcodes.instrument_drivers.Lakeshore.Model_372' in Lakeshore372.__module__
+    else:
+        assert 'bluefors_dc.instruments.lakeshore' in Lakeshore372.__module__
+
+def test_custom_drivers_for_instruments_without_official():
+    """Test that instruments without official drivers still use custom ones."""
+    from bluefors_dc.instruments import Keithley6221, Keithley2182A
+    
+    # These should always use custom drivers (no official equivalents)
+    assert 'bluefors_dc.instruments.keithley' in Keithley6221.__module__
+    assert 'bluefors_dc.instruments.keithley' in Keithley2182A.__module__
+
 def test_instruments_module_exports():
-    """Test that the instruments module exports include both custom and contrib drivers when available."""
+    """Test that the instruments module exports include both official/custom and contrib drivers when available."""
     import bluefors_dc.instruments as instruments
     
-    # Custom drivers should always be in __all__
-    custom_drivers = [
+    # All primary drivers should always be in __all__ (official or custom fallback)
+    primary_drivers = [
         'AMI430MagnetController',
         'Keithley6221',
         'Keithley2182A',
@@ -56,8 +93,8 @@ def test_instruments_module_exports():
         'Lakeshore372'
     ]
     
-    for driver in custom_drivers:
-        assert driver in instruments.__all__, f"Custom driver {driver} not in __all__"
+    for driver in primary_drivers:
+        assert driver in instruments.__all__, f"Driver {driver} not in __all__"
     
     # Check if contrib drivers are available and in __all__ 
     try:
@@ -69,6 +106,27 @@ def test_instruments_module_exports():
     except ImportError:
         # If contrib drivers not installed, that's fine - they shouldn't be in __all__
         pass
+
+def test_driver_status_function():
+    """Test that the driver status function works correctly."""
+    from bluefors_dc.instruments import get_driver_status
+    
+    status = get_driver_status()
+    
+    # Check structure
+    assert 'official_drivers_available' in status
+    assert 'contrib_drivers_available' in status
+    
+    # Check that expected drivers are tracked
+    official_drivers = status['official_drivers_available']
+    assert 'AMI430' in official_drivers
+    assert 'Keithley2636B' in official_drivers
+    assert 'Lakeshore372' in official_drivers
+    assert 'ZurichMFLI' in official_drivers
+    
+    contrib_drivers = status['contrib_drivers_available']
+    assert 'BlueFors' in contrib_drivers
+    assert 'Lakeshore331' in contrib_drivers
 
 def test_package_dependency():
     """Test that the package dependency is correctly configured."""
