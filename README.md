@@ -24,7 +24,7 @@ This package provides Python/QCoDeS equivalents for all LabVIEW VIs, implementin
 - **Keithley 6221**: Current source with delta mode capability - *custom driver*
 - **Keithley 2182A**: Nanovoltmeter for high-precision voltage measurement - *custom driver*
 - **Keithley 2636B**: Dual channel source-measure unit - *custom driver*
-- **Zurich Instruments MFLI**: Lock-in amplifier with harmonic analysis - *custom driver*
+- **Zurich Instruments MFLI**: Lock-in amplifier with harmonic analysis - *official zhinst-qcodes driver + custom fallback*
 
 ### Monitoring and Control
 - **BlueFors**: Fridge monitoring via log files - *contrib driver*
@@ -41,6 +41,12 @@ pip install -e .
 
 # Or install with development dependencies
 pip install -e .[dev]
+
+# Or install with official Zurich Instruments drivers
+pip install -e .[zhinst]
+
+# Or install with both dev and Zurich Instruments drivers
+pip install -e .[dev,zhinst]
 ```
 
 ## Quick Start
@@ -194,6 +200,52 @@ from bluefors_dc.instruments import (
 ### Fallback Behavior
 
 If `qcodes-contrib-drivers` is not installed, the package continues to work with only the custom drivers. The contrib drivers are optional dependencies that extend functionality when available.
+
+## Official Zurich Instruments Integration
+
+This package also integrates with the [official Zurich Instruments drivers for QCoDeS](https://github.com/zhinst/zhinst-qcodes) to provide access to professionally maintained drivers for Zurich Instruments devices.
+
+### Available Official Drivers
+
+- **MFLI**: Multi-frequency lock-in amplifier - provides comprehensive lock-in functionality with advanced features
+- **Additional ZI devices**: MFIA, UHFLI, HDAWG, SHFQA, etc. (available through the ZhinstrumentsMFLI import pattern)
+
+### Installation
+
+```bash
+# Install with official Zurich Instruments drivers
+pip install -e .[zhinst]
+```
+
+### Usage
+
+The official drivers are automatically imported when available and can be used alongside the custom drivers:
+
+```python
+from bluefors_dc.instruments import (
+    # Custom Zurich driver (always available - basic functionality)
+    ZurichMFLI,
+    # Official Zurich driver (imported when zhinst-qcodes available - full functionality)
+    ZhinstrumentsMFLI
+)
+
+# Use the official driver for advanced features
+try:
+    lock_in = ZhinstrumentsMFLI('lock_in', 'dev1234', 'localhost')
+    # Full zhinst-toolkit functionality available
+except NameError:
+    # Fall back to custom driver if zhinst-qcodes not installed
+    lock_in = ZurichMFLI('lock_in', 'dev1234')
+    # Basic lock-in functionality available
+```
+
+### Benefits of Official Integration
+
+- **Professional maintenance**: Drivers maintained by Zurich Instruments engineering team
+- **Latest features**: Access to newest device capabilities and firmware features  
+- **Comprehensive functionality**: Full device parameter access and advanced measurement modes
+- **Zurich Toolkit integration**: Direct access to high-level measurement workflows
+- **Automatic fallback**: Graceful degradation to custom driver when official drivers unavailable
 
 ## Project Structure
 
