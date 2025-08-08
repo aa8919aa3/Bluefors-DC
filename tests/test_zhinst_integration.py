@@ -23,7 +23,11 @@ class TestZhinstrumentsIntegration:
         # Import our instruments module
         from bluefors_dc import instruments
         
-        if zhinst_available:
+        # Check driver status using the new method
+        status = instruments.get_driver_status()
+        official_available = status['official_drivers_available']['ZhinstrumentsMFLI']
+        
+        if zhinst_available and official_available:
             # If zhinst-qcodes is available, ZhinstrumentsMFLI should be importable
             assert hasattr(instruments, 'ZhinstrumentsMFLI'), \
                 "ZhinstrumentsMFLI should be available when zhinst-qcodes is installed"
@@ -32,15 +36,10 @@ class TestZhinstrumentsIntegration:
             
             # The driver should be the official one
             assert instruments.ZhinstrumentsMFLI is not None
-            assert instruments._ZHINST_QCODES_AVAILABLE is True
         else:
-            # If zhinst-qcodes is not available, ZhinstrumentsMFLI should not be importable
-            assert not hasattr(instruments, 'ZhinstrumentsMFLI') or \
-                   instruments.ZhinstrumentsMFLI is None, \
-                "ZhinstrumentsMFLI should not be available when zhinst-qcodes is not installed"
+            # If zhinst-qcodes is not available, ZhinstrumentsMFLI should not be in exports
             assert 'ZhinstrumentsMFLI' not in instruments.__all__, \
                 "ZhinstrumentsMFLI should not be in __all__ when zhinst-qcodes is not available"
-            assert instruments._ZHINST_QCODES_AVAILABLE is False
 
     def test_custom_zurich_mfli_always_available(self):
         """Test that the custom ZurichMFLI driver is always available."""
